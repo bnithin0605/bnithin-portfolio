@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=1200, initial-scale=0.3">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/jpeg" href="assets/profile.jpeg">
 <title>Nithin Chakravarthi | Portfolio</title>
 
@@ -163,7 +163,7 @@ stroke="currentColor" stroke-width="1.8">
         <div class="avatar-wrapper">
           <div class="avatar">
             <span class="arc arc-orange"></span>
-            <img src="assets/profile.jpeg" alt="Nithin">
+            <img src="assets/p2.jpg" alt="Nithin">
           </div>
         </div>
 
@@ -212,6 +212,12 @@ stroke="currentColor" stroke-width="1.8">
           </div>
         </div>
 
+<div class="about-cert-block">
+
+<h3 class="about-subheading">
+certifications.registry
+</h3>
+
 <div class="cert-carousel">
 
 <button class="cert-arrow left">
@@ -253,7 +259,7 @@ stroke="currentColor" stroke-width="1.8">
 </button>
 
 </div>
-
+</div>
   </div>
 
 </section>
@@ -931,12 +937,11 @@ const container = document.getElementById("globe-container");
 
 const scene = new THREE.Scene();
 
-const DESIGN_WIDTH = 1200;
-const DESIGN_HEIGHT = 900;
+
 
 const camera = new THREE.PerspectiveCamera(
 60,
-DESIGN_WIDTH / DESIGN_HEIGHT,
+container.clientWidth / 520,
 0.1,
 1000
 );
@@ -945,12 +950,84 @@ const renderer = new THREE.WebGLRenderer({
 antialias:true,
 alpha:true
 });
-renderer.setSize(DESIGN_WIDTH, DESIGN_HEIGHT);
+renderer.setSize(container.clientWidth, 520);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.setClearColor(0x000000,0);
 
 container.appendChild(renderer.domElement);
+
+function getLayout(){
+
+const width = container.clientWidth;
+
+let radius;
+let cameraZ;
+
+if(width < 480){
+
+radius = 2.3;
+cameraZ = 9.8;
+
+}
+else if(width < 900){
+
+radius = 2.5;
+cameraZ = 9.2;
+
+}
+else{
+
+radius = 2.4;     // ⭐ smaller laptop globe
+cameraZ = 9;
+
+}
+
+return { radius , cameraZ };
+
+}
+
+let layout = getLayout();
+let RADIUS = layout.radius;
+camera.position.z = layout.cameraZ;
+
+const globeGroup = new THREE.Group();
+scene.add(globeGroup);
+
+function resizeGlobe(){
+
+const width = container.clientWidth;
+const height = window.innerWidth < 768 ? 460 : 620;
+
+renderer.setSize(width, height);
+
+camera.aspect = width / height;
+camera.updateProjectionMatrix();
+
+if(width < 480){
+
+RADIUS = 2.8;
+camera.position.z = 10;
+
+}
+else if(width < 900){
+
+RADIUS = 2.6;
+camera.position.z = 9.5;
+
+}
+else{
+
+RADIUS = 3.2;
+camera.position.z = 9;
+
+}
+
+
+}
+
+resizeGlobe();
+window.addEventListener("resize", resizeGlobe);
 //////////////////////////////////////////////////////////////
 // GLOW TEXTURE
 //////////////////////////////////////////////////////////////
@@ -1015,48 +1092,16 @@ mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 // RESPONSIVE
 //////////////////////////////////////////////////////////////
 
-function getLayout(){
 
-const width = DESIGN_WIDTH;
-const height = DESIGN_HEIGHT;
 
-let radius;
-let cameraZ;
 
-if(width<=420){
-radius = width*0.0032;
-cameraZ = 8;
-}
-else if(width<768){
-radius = width*0.0036;
-cameraZ = 7.8;
-}
-else if(width<1024){
-radius = Math.min(width,height)*0.0028;
-cameraZ = 7.6;
-}
-else{
-radius = Math.min(width,height)*0.0032;
-cameraZ = 8.2;
-}
-
-radius = Math.min(radius,2.2);
-
-return{radius,cameraZ};
-
-}
-
-let layout = getLayout();
-let RADIUS = layout.radius;
-camera.position.z = layout.cameraZ;
 
 
 //////////////////////////////////////////////////////////////
 // GLOBE GROUP
 //////////////////////////////////////////////////////////////
 
-const globeGroup = new THREE.Group();
-scene.add(globeGroup);
+
 
 let iconSprites = [];
 
@@ -1176,11 +1221,14 @@ const ctx = canvas.getContext("2d");
 
 ctx.clearRect(0,0,256,64);
 
-ctx.font="600 20px Inter, Arial, sans-serif";
+ctx.font = "800 26px Inter, Arial, sans-serif";
 ctx.fillStyle=color;
 ctx.textAlign="center";
 
 ctx.fillText(text,128,40);
+ctx.strokeStyle = "rgba(0,0,0,0.6)";
+ctx.lineWidth = 4;
+ctx.strokeText(text,192,60);
 
 return new THREE.CanvasTexture(canvas);
 
@@ -1321,6 +1369,41 @@ isDragging=false;
 document.addEventListener("mousedown",e=>startDrag(e.clientX,e.clientY));
 document.addEventListener("mousemove",e=>moveDrag(e.clientX,e.clientY));
 document.addEventListener("mouseup",endDrag);
+
+//////////////////////////////////////////////////////////////
+// TOUCH SUPPORT
+//////////////////////////////////////////////////////////////
+
+document.addEventListener("touchstart", e => {
+
+const rect = renderer.domElement.getBoundingClientRect();
+const t = e.touches[0];
+
+const insideGlobe =
+t.clientX >= rect.left &&
+t.clientX <= rect.right &&
+t.clientY >= rect.top &&
+t.clientY <= rect.bottom;
+
+if(!insideGlobe) return;
+
+startDrag(t.clientX , t.clientY);
+
+}, { passive:true });
+
+document.addEventListener("touchmove", e => {
+
+if(!isDragging) return;
+
+const t = e.touches[0];
+
+moveDrag(t.clientX , t.clientY);
+
+e.preventDefault();   // ⭐ scroll blocked ONLY during drag
+
+}, { passive:false });
+
+document.addEventListener("touchend", endDrag);
 
 //////////////////////////////////////////////////////////////
 // ANIMATION
@@ -1542,38 +1625,85 @@ document.body.removeChild(a);
 });
 
 // carasouel
+// ================= CERT CAROUSEL =================
+
 const track = document.querySelector('.cert-track');
-const step = 170; // 138 badge + 32 gap
+const badges = document.querySelectorAll('.cert-badge');
+
+function getStep(){
+
+const badgeWidth = badges[0].offsetWidth;
+const gap = 28;
+
+return badgeWidth + gap;
+
+}
 
 function moveRight(){
 
-track.style.transition = '.5s cubic-bezier(.22,.61,.36,1)';
+const step = getStep();
+
+track.style.transition = '.45s cubic-bezier(.22,.61,.36,1)';
 track.style.transform = `translateX(-${step}px)`;
 
 setTimeout(()=>{
+
 track.appendChild(track.firstElementChild);
-track.style.transition = 'none';
-track.style.transform = 'translateX(0)';
-},500);
+
+track.style.transition='none';
+track.style.transform='translateX(0)';
+
+},450);
 
 }
 
 function moveLeft(){
 
-track.insertBefore(track.lastElementChild, track.firstElementChild);
+const step = getStep();
 
-track.style.transition = 'none';
-track.style.transform = `translateX(-${step}px)`;
+track.insertBefore(track.lastElementChild , track.firstElementChild);
+
+track.style.transition='none';
+track.style.transform=`translateX(-${step}px)`;
 
 requestAnimationFrame(()=>{
-track.style.transition = '.5s cubic-bezier(.22,.61,.36,1)';
-track.style.transform = 'translateX(0)';
+
+track.style.transition='.45s cubic-bezier(.22,.61,.36,1)';
+track.style.transform='translateX(0)';
+
 });
 
 }
 
 document.querySelector('.cert-arrow.right').onclick = moveRight;
 document.querySelector('.cert-arrow.left').onclick = moveLeft;
+
+let startX = 0;
+let endX = 0;
+
+const viewport = document.querySelector('.cert-viewport');
+
+viewport.addEventListener('touchstart', (e)=>{
+startX = e.touches[0].clientX;
+});
+
+viewport.addEventListener('touchmove', (e)=>{
+endX = e.touches[0].clientX;
+});
+
+viewport.addEventListener('touchend', ()=>{
+
+const diff = startX - endX;
+
+if(Math.abs(diff) < 40) return;   // ignore small touches
+
+if(diff > 0){
+moveRight();   // swipe left → go next
+}else{
+moveLeft();    // swipe right → go prev
+}
+
+});
 
 </script>
 

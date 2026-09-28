@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/jpeg" href="assets/profile.jpeg">
-<title>Nithin Chakravarthi | Portfolio</title>
+<title>Nithin Bandi | Portfolio</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
@@ -26,11 +26,11 @@
 
       <h1>
         Hello, I'm <br>
-        <span class="gradient-text">Nithin Chakravarthi</span>
+        <span class="gradient-text">Nithin Bandi</span>
       </h1>
 
       <p class="hero-description">
-Software Engineer focused on scalable, production-grade applications and real-time embedded systems, with experience in AI infrastructure.
+AI Software Engineer focused on scalable, production-grade applications and real-time embedded systems, with experience in AI infrastructure.
       </p>
 <div class="hero-cta">
 
@@ -168,12 +168,12 @@ stroke="currentColor" stroke-width="1.8">
 
         <div class="info-row">
           <div class="label">OPERATOR</div>
-          <div class="value orange">NITHIN CHAKRAVARTHI</div>
+          <div class="value orange">NITHIN BANDI</div>
         </div>
 
         <div class="info-row">
           <div class="label">ROLE</div>
-          <div class="value blue">SYSTEMS_ENGINEER</div>
+          <div class="value blue">AI_SOFTWARE_ENGINEER</div>
         </div>
 
         <div class="info-row">
@@ -197,7 +197,7 @@ stroke="currentColor" stroke-width="1.8">
 
           <div class="command">→ whoami</div>
 <div class="output">
-Software Engineer focused on distributed platforms, real-time embedded systems,
+AI Software Engineer focused on distributed platforms, real-time embedded systems,
 and AI infrastructure engineering.
 </div>
 
@@ -777,7 +777,7 @@ contact_info.json
 <footer class="portfolio-footer">
 
 <p class="footer-name">
- Nithin Bandi | Software Engineer
+ Nithin Bandi | AI Software Engineer
 </p>
 
 
@@ -839,8 +839,8 @@ const lines = [
 `<span class="ln">4</span> <span class="kw">const</span> <span class="fn">Portfolio</span> = () ⇒ {`,
 `<span class="ln">5</span>   <span class="kw">return</span> (`,
 `<span class="ln">6</span>     &lt;<span class="tag">Developer</span>`,
-`<span class="ln">7</span>       <span class="attr">name</span>=<span class="str">"Nithin Chakravarthi"</span>`,
-`<span class="ln">8</span>       <span class="attr">role</span>=<span class="str">"Systems & AI Engineer"</span>`,
+`<span class="ln">7</span>       <span class="attr">name</span>=<span class="str">"Nithin Bandi"</span>`,
+`<span class="ln">8</span>       <span class="attr">role</span>=<span class="str">"AI Software Engineer"</span>`,
 `<span class="ln">9</span>       <span class="attr">passion</span>=<span class="str">"Building Intelligent Systems"</span>`,
 `<span class="ln">10</span>    /&gt;`,
 `<span class="ln">11</span>  );`,
@@ -1141,7 +1141,131 @@ const skills = [
 { name:"PHP", url:"https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg" },
 ];
 
-const textureLoader = new THREE.TextureLoader();
+//////////////////////////////////////////////////////////////
+// ICON TEXTURE LOADER
+// Devicon SVGs often have only a viewBox (no width/height), so
+// their natural size is 0 or arbitrary. Uploading that straight
+// to WebGL gives "bad image data" + "texture is immutable".
+// Fix: rasterize every icon onto a fixed 256x256 canvas first.
+//
+// jsdelivr's /gh/ path is also occasionally flaky for long-tail
+// files (times out or 5xx's on an otherwise-valid URL), so a
+// single failed load shouldn't just delete that skill's sprite.
+// We retry once against a second CDN (unpkg, served from the
+// published npm package instead of the git repo), and if that
+// also fails, draw a labeled placeholder so the node still shows.
+//////////////////////////////////////////////////////////////
+
+const ICON_TEX_SIZE = 256;
+
+function drawImageToTexture(img){
+
+const canvas = document.createElement("canvas");
+canvas.width = ICON_TEX_SIZE;
+canvas.height = ICON_TEX_SIZE;
+
+const ctx = canvas.getContext("2d");
+
+const w = img.naturalWidth  || ICON_TEX_SIZE;
+const h = img.naturalHeight || ICON_TEX_SIZE;
+
+// fit inside the square with a little padding, keep aspect ratio
+const scale = Math.min(
+(ICON_TEX_SIZE * 0.9) / w,
+(ICON_TEX_SIZE * 0.9) / h
+);
+
+const dw = w * scale;
+const dh = h * scale;
+
+ctx.drawImage(
+img,
+(ICON_TEX_SIZE - dw) / 2,
+(ICON_TEX_SIZE - dh) / 2,
+dw,
+dh
+);
+
+const texture = new THREE.CanvasTexture(canvas);
+texture.colorSpace = THREE.SRGBColorSpace;
+
+return texture;
+
+}
+
+function drawFallbackTexture(name){
+
+const canvas = document.createElement("canvas");
+canvas.width = ICON_TEX_SIZE;
+canvas.height = ICON_TEX_SIZE;
+
+const ctx = canvas.getContext("2d");
+const c = ICON_TEX_SIZE/2;
+
+ctx.beginPath();
+ctx.arc(c, c, c*0.82, 0, Math.PI*2);
+ctx.fillStyle = "#1a1c22";
+ctx.fill();
+ctx.lineWidth = 6;
+ctx.strokeStyle = "#ff6a00";
+ctx.stroke();
+
+ctx.fillStyle = "#ff6a00";
+ctx.font = "800 96px Inter, Arial, sans-serif";
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+ctx.fillText((name||"?").charAt(0).toUpperCase(), c, c+6);
+
+const texture = new THREE.CanvasTexture(canvas);
+texture.colorSpace = THREE.SRGBColorSpace;
+
+return texture;
+
+}
+
+// devicon is published to npm as "devicon", so the same icon path
+// resolves on unpkg without going through jsdelivr's /gh/ redirect
+function toUnpkgFallback(url){
+
+const match = url.match(/\/devicons\/devicon\/(icons\/.+)$/);
+
+if(!match) return null;
+
+return `https://unpkg.com/devicon@latest/${match[1]}`;
+
+}
+
+function loadIconTexture(skill, onReady){
+
+const primaryUrl = skill.url;
+const fallbackUrl = toUnpkgFallback(primaryUrl);
+
+function tryLoad(url, onFail){
+
+if(!url){ onFail(); return; }
+
+const img = new Image();
+img.crossOrigin = "anonymous";
+
+img.onload = () => onReady(drawImageToTexture(img));
+
+img.onerror = () => {
+console.warn("Skill icon failed to load:", url);
+onFail();
+};
+
+img.src = url;
+
+}
+
+tryLoad(primaryUrl, () => {
+tryLoad(fallbackUrl, () => {
+console.warn("Skill icon unavailable from all CDNs, using placeholder:", skill.name);
+onReady(drawFallbackTexture(skill.name));
+});
+});
+
+}
 
 //////////////////////////////////////////////////////////////
 // FIBONACCI SPHERE
@@ -1244,9 +1368,7 @@ const iconPositions = fibonacciSphere(skills.length,RADIUS*1.18);
 skills.forEach((skill,index)=>{
   
 
-textureLoader.load(skill.url,(texture)=>{
-
-texture.colorSpace = THREE.SRGBColorSpace;
+loadIconTexture(skill,(texture)=>{
 
 const material = new THREE.SpriteMaterial({
 map:texture,
@@ -1706,4 +1828,4 @@ moveLeft();    // swipe right → go prev
 
 </script>
 
-</body>
+</body></html>
